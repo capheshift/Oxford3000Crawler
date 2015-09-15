@@ -17,7 +17,7 @@ router.get('/', function(req, res, next) {
 router.post('/postword', function(req, res) {
     var word = req.body.key;
     console.log(word);
-})
+});
 
 router.get('/pronunciation', function(req, res) {
     var wordsData = [];
@@ -54,7 +54,7 @@ router.get('/pronunciation', function(req, res) {
         });
     }, function(results) {
         console.log(results);
-    })
+    });
 });
 
 var writeJSONFile = function(data) {
