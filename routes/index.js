@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 var request = require('request');
 var cheerio = require('cheerio');
-var wordlist = require('3000-words-list');
+var wordlist = require('english3kdata');
 var lodash = require('lodash');
 var async = require('async');
 var fs = require('fs');
@@ -22,47 +22,48 @@ router.post('/postword', function(req, res) {
 router.get('/pronunciation', function(req, res) {
     var wordsData = [];
     var keyword = req.params.keyword;
-    console.log('out side');
-    console.log(wordlist.getAll());
     async.forEachOf(wordlist.getAll(), function(word, key, callback) {
-        if (wordlist.getAll() === {}) {
-            return callback('Can not get word list');
-        } else {
-            var url = 'http://www.oxforddictionaries.com/definition/english/' + word.name;
-            console.log('word name');
-            request(url, function(err, response, body) {
-                if (!err && response.statusCode == 200) {
-                    var words = {};
-                    var $ = cheerio.load(body);
-                    words.pronunciation = $('.headpron').text();
-                    words.sound = $('.sound').attr('data-src-mp3');
-                    words.name = word.name;
-                    var jsdata = [];
-                    $('div .senseGroup').each(function(index, item) {
-                        var definition = $(item).find(".definition").text();
-                        var title = $(item).find("h3").text();
-                        var example = $(item).find(".example").text();
-                        var moreInformation = $(item).find(".moreInformation").text();
-                        jsdata.push({
-                            'definition': definition,
-                            'title': title,
-                            'example': example,
-                            'moreInformation': moreInformation
-                        });
+        var url = 'http://www.oxforddictionaries.com/definition/english/' + word.name;
+        request(url, function(err, response, body) {
+            var words = {};
+            var count = 0;
+            if (response.statusCode == 404) {
+                count += count;
+                console.log(count);
+            } else if (!err && response.statusCode == 200) {
+                var $ = cheerio.load(body);
+                words.number = key;
+                words.pronunciation = $('.headpron').text();
+                words.sound = $('.sound').attr('data-src-mp3');
+                words.name = word.name;
+                var jsdata = [];
+                $('div .senseGroup').each(function(index, item) {
+                    var definition = $(item).find(".definition").text();
+                    var title = $(item).find("h3").text();
+                    var example = $(item).find(".example").text();
+                    var moreInformation = $(item).find(".moreInformation").text();
+                    jsdata.push({
+                        'definition': definition,
+                        'title': title,
+                        'example': example,
+                        'moreInformation': moreInformation
                     });
-                    words.data = jsdata;
-                    wordsData.push(words);
-
-                    if (wordsData.length === (wordlist.getLength() - 1)) {
-                        console.log('callback');
-                        callback(wordsData);
-                    }
-                }
-            });
-        }
+                });
+            }
+            words.data = jsdata;
+            wordsData.push(words);
+            console.log('length of word data' + wordsData.length);
+            console.log('length of word list' + wordlist.getLength());
+            if (wordsData.length === (wordlist.getLength() - count)) {
+                callback(wordsData);
+            }
+        });
     }, function(results) {
-        console.log('retrun callback');
+        console.log('in');
+        writeJSONFile(results);
+        console.log('out');
     });
+    return res.jsonp('words info');
 });
 
 var writeJSONFile = function(data) {
