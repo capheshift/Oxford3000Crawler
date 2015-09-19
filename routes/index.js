@@ -22,38 +22,46 @@ router.post('/postword', function(req, res) {
 router.get('/pronunciation', function(req, res) {
     var wordsData = [];
     var keyword = req.params.keyword;
-    async.forEach(wordlist.getAll(), function(word, key, callback) {
-        var url = 'http://www.oxforddictionaries.com/definition/english/' + word.name;
-        request(url, function(err, response, body) {
-            if (!err && response.statusCode == 200) {
-                var words = {};
-                var $ = cheerio.load(body);
-                words.pronunciation = $('.headpron').text();
-                words.sound = $('.sound').attr('data-src-mp3');
-                words.name = word.name;
-                var jsdata = [];
-                $('div .senseGroup').each(function(index, item) {
-                    var definition = $(item).find(".definition").text();
-                    var title = $(item).find("h3").text();
-                    var example = $(item).find(".example").text();
-                    var moreInformation = $(item).find(".moreInformation").text();
-                    jsdata.push({
-                        'definition': definition,
-                        'title': title,
-                        'example': example,
-                        'moreInformation': moreInformation
+    console.log('out side');
+    console.log(wordlist.getAll());
+    async.forEachOf(wordlist.getAll(), function(word, key, callback) {
+        if (wordlist.getAll() === {}) {
+            return callback('Can not get word list');
+        } else {
+            var url = 'http://www.oxforddictionaries.com/definition/english/' + word.name;
+            console.log('word name');
+            request(url, function(err, response, body) {
+                if (!err && response.statusCode == 200) {
+                    var words = {};
+                    var $ = cheerio.load(body);
+                    words.pronunciation = $('.headpron').text();
+                    words.sound = $('.sound').attr('data-src-mp3');
+                    words.name = word.name;
+                    var jsdata = [];
+                    $('div .senseGroup').each(function(index, item) {
+                        var definition = $(item).find(".definition").text();
+                        var title = $(item).find("h3").text();
+                        var example = $(item).find(".example").text();
+                        var moreInformation = $(item).find(".moreInformation").text();
+                        jsdata.push({
+                            'definition': definition,
+                            'title': title,
+                            'example': example,
+                            'moreInformation': moreInformation
+                        });
                     });
-                });
-                words.data = jsdata;
-                wordsData.push(words);
+                    words.data = jsdata;
+                    wordsData.push(words);
 
-                if (wordsData.length === (wordlist.getLength() - 1)) {
-                    callback(wordsData);
+                    if (wordsData.length === (wordlist.getLength() - 1)) {
+                        console.log('callback');
+                        callback(wordsData);
+                    }
                 }
-            }
-        });
+            });
+        }
     }, function(results) {
-        console.log(results);
+        console.log('retrun callback');
     });
 });
 
